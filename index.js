@@ -60,6 +60,12 @@ async function run(){
       const token = jwt.sign({email:email},process.env.ACCESS_TOKEN_SECRETE,{expiresIn:'1h'})
       res.send({result,token})
     })
+
+    app.get('/user',async(req,res)=>{
+      const users = await userCollection.find().toArray()
+      res.send(users)
+    })
+
  // warning:
  // this is not the proper way to query.
  // after learning more about mongodb . use aggregate lookup, pipeline, match, group
