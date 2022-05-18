@@ -38,16 +38,15 @@ async function run() {
   try {
     await client.connect();
 
-    const servicesCollection = client
-      .db("doctor_portal")
-      .collection("services");
+    const servicesCollection = client.db("doctor_portal").collection("services");
     const bookingCollection = client.db("doctor_portal").collection("booking");
     const userCollection = client.db("doctor_portal").collection("user");
+    const doctorCollection = client.db("doctor_portal").collection("doctor");
 
     // service api
     app.get("/service", async (req, res) => {
       const query = {};
-      const cursor = servicesCollection.find(query);
+      const cursor = servicesCollection.find(query).project({name:1});
       const services = await cursor.toArray();
       res.send(services);
     });
@@ -168,6 +167,13 @@ async function run() {
         return res.status(403).send({ message: "forbidden access" });
       }
     });
+
+    app.post('/doctor',async(req,res)=>{
+      const doctor = req.body;
+      const result = await doctorCollection.insertOne(doctor);
+      res.send(result);
+    })
+
   } finally {
     // await client.close();
   }
