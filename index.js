@@ -3,7 +3,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const app = express();
 const cors = require("cors");
-const stripe = require('stripe')(process.env.STRIPE_SECRETE_KEY)
+const stripe = require('stripe')(`sk_test_51L2BQ1CJu1xjIM5SOMTE8C8SJdXiU5dhOGQbIeLtoGnPTuSkwryGRGGhcHUGYW8geZcaInEQbi68pMQEsKpmtBJX00edz9kz0F`)
 
 require("dotenv").config();
 const port = process.env.PORT || 5000;
@@ -43,7 +43,8 @@ async function run() {
     const bookingCollection = client.db("doctor_portal").collection("booking");
     const userCollection = client.db("doctor_portal").collection("user");
     const doctorCollection = client.db("doctor_portal").collection("doctor");
-
+    const paymentCollection = client.db("doctor_portal").collection("payments");
+    
     // verify admin middleware
     const verifyAdmin = async(req,res,next)=>{
       const requester = req.decoded.email;
@@ -180,6 +181,22 @@ async function run() {
       const booking =await bookingCollection.findOne(query)
       res.send(booking)
     })
+
+    // update booking
+    app.patch('/booking/:id', async(req,res)=>{
+      const id = req.params.id;
+      const payment = req.body;
+      const filter = {_id:ObjectId(id)}
+      const updateDoc = {
+        $set : {
+          paid: true,
+          transactionId: payment.transactionId
+        }
+      }
+      const result = await paymentCollection.insertOne(payment)
+      const updatedBooking = await bookingCollection.updateOne(filter, updateDoc)
+      res.send(updateDoc)
+    })
      
     // api for doctor info save to db
     app.post('/doctor',verifiJwt, verifyAdmin, async(req,res)=>{
@@ -202,7 +219,7 @@ async function run() {
     })
 
     // api for strip 
-    app.post('/create-payment-intent',verifiJwt, async(req,res)=>{
+    app.post('/create-payment-intent', async(req,res)=>{
       const service = req.body;
       const price = service.price;
       const amount = price*100;
